@@ -3,13 +3,18 @@ import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 public class kitFrame extends JFrame {
+    boolean isNew = true;
+    int nums = 0;
     Clipboard clipboard;
-    HashMap<String, String> menuMap = new HashMap();
-    JPanel namePanel, xPanel, yPanel, costPanel, resultPanel, jlPanel, fzPanel, showPanel, lorePanel, radioPanel, commandPanel, menuPanel;
+    ArrayList<String> saveList = new ArrayList<>();
+    HashMap<String, String> menuMap = new HashMap<>();
+    HashMap<Integer, String> clearMap = new HashMap<>();
+    JPanel namePanel, xPanel, yPanel, costPanel, resultPanel, jlPanel, fzPanel, showPanel, lorePanel, radioPanel, commandPanel, menuPanel, newMenuPanel;
+    JTextField newMenuField = new JTextField(30);
     JTextField yField = new JTextField(30);
     JTextField menuField = new JTextField(30);
     JTextField xField = new JTextField(30);
@@ -20,10 +25,12 @@ public class kitFrame extends JFrame {
     JTextField loreField = new JTextField(30);
     JTextField commandField = new JTextField(30);
     JTextArea resultArea = new JTextArea(20, 40);
-    ButtonGroup g1 = new ButtonGroup();
+    ButtonGroup g1 = new ButtonGroup(), g2 = new ButtonGroup();
     JRadioButton yesButton = new JRadioButton("有附魔效果");
     JRadioButton noButton = new JRadioButton("无附魔效果", true);
-    JButton fzButton = new JButton("复制代码"), resultButton = new JButton("显示结果"), menuButton = new JButton("自动复制权限代码");
+    JRadioButton yesOpenButton = new JRadioButton("有KEEP-OPEN");
+    JRadioButton noOpenButton = new JRadioButton("无KEEP-OPEN", true);
+    JButton fzButton = new JButton("复制代码"), clearButton = new JButton("清空结果栏"), clearRearButton = new JButton("删除最后一个菜单"), resultButton = new JButton("显示结果"), menuButton = new JButton("自动复制权限代码"), appendButton = new JButton("添加到尾部");
     Box vB1 = Box.createVerticalBox();
 
     public kitFrame(String title) {
@@ -53,31 +60,42 @@ public class kitFrame extends JFrame {
         jlField.setLineWrap(true);
         JLabel resultLabel = new JLabel("菜单代码:");
         JLabel jlLabel = new JLabel("简略输入:");
+        JLabel fenge = new JLabel(" | ");
         g1.add(noButton);
         g1.add(yesButton);
+        g2.add(yesOpenButton);
+        g2.add(noOpenButton);
         radioPanel = new JPanel();
         resultArea.setLineWrap(true);
         resultPanel = new JPanel();
         fzPanel = new JPanel();
         fzPanel.add(resultButton);
         fzPanel.add(fzButton);
+        fzPanel.add(appendButton);
+        fzPanel.add(clearButton);
+        fzPanel.add(clearRearButton);
 
         menuPanel = createPane("菜单名称:", menuField);
         menuPanel.add(menuButton);
 
         showPanel = createPane("显示图标:", showField);
-        lorePanel = createPane("描述信息", loreField);
-        namePanel = createPane("    礼包名:", nameField);
+        lorePanel = createPane("描述信息:", loreField);
+        namePanel = createPane("格子名称:", nameField);
         yPanel = createPane("格子行数:", yField);
         xPanel = createPane("格子列数:", xField);
-        costPanel = createPane("        花费:", costField);
+        costPanel = createPane("消耗金额:", costField);
+        newMenuPanel = createPane("新菜单名:", newMenuField);
         jlPanel = new JPanel();
         jlPanel.add(jlLabel);
         jlPanel.add(jlField);
         commandPanel = createPane("执行命令:", commandField);
         radioPanel.add(noButton);
         radioPanel.add(yesButton);
+        radioPanel.add(fenge);
+        radioPanel.add(noOpenButton);
+        radioPanel.add(yesOpenButton);
         vB1.add(new JScrollPane(jlPanel));
+        vB1.add(newMenuPanel);
         vB1.add(namePanel);
         vB1.add(lorePanel);
         vB1.add(showPanel);
@@ -121,10 +139,24 @@ public class kitFrame extends JFrame {
                 resultArea.setText("");
                 if (jlField.getText().length() != 0) {
                     resultArea.setText(menuJl(jlField.getText()));
+                    nameField.setText("");
+                    costField.setText("");
+                    xField.setText("");
+                    yField.setText("");
+                    loreField.setText("");
+                    showField.setText("");
+                    commandField.setText("");
                 } else {
                     resultArea.setText(output());
+                    nameField.setText("");
+                    costField.setText("");
+                    xField.setText("");
+                    yField.setText("");
+                    loreField.setText("");
+                    showField.setText("");
+                    commandField.setText("");
                 }
-
+                nums++;
             }
         });
         fzButton.addActionListener(e -> {
@@ -133,7 +165,62 @@ public class kitFrame extends JFrame {
         menuButton.addActionListener(e -> {
             onCopyMenu();
         });
+        appendButton.addActionListener(e -> {
+            onAppend();
+        });
+        clearButton.addActionListener(e -> {
+            onClear();
+        });
+        clearRearButton.addActionListener(e -> {
+            resultArea.setText(getString(resultArea.getText()));
+        });
+    }
 
+
+    private void onClear() {
+        resultArea.setText("");
+        nums = 0;
+    }
+
+    private void onAppend() {
+        if (isIllegal()) {
+            JOptionPane.showMessageDialog(this, "x和y不要留空!");
+        } else if (isIntergerIllegal()) {
+            JOptionPane.showMessageDialog(this, "x应该在1~9之间,y应该在1~6之间!");
+        } else {
+            if (jlField.getText().length() != 0) {
+                StringBuilder fore = new StringBuilder(resultArea.getText());
+                if (!resultArea.getText().trim().equals("")) {
+                    fore.append("\n");
+                }
+                fore.append(menuJl(jlField.getText()));
+                resultArea.setText(fore.toString());
+            } else {
+                StringBuilder fore = new StringBuilder(resultArea.getText());
+                if (!resultArea.getText().trim().equals("")) {
+                    fore.append("\n");
+                }
+                fore.append(output());
+                resultArea.setText(fore.toString());
+            }
+            nums++;
+        }
+    }
+
+    private String getString(String result) {
+        int index = 0;
+        String[] r = result.split("\\r?\\n");
+        StringBuilder sb = new StringBuilder();
+        for (int i = r.length - 1; i >= 0; i--) {
+            if (r[i].equals("")) {
+                index = i;
+                break;
+            }
+        }
+        for (int i = 0; i < index; i++) {
+            sb.append(r[i]).append("\n");
+        }
+        return sb.toString();
     }
 
     private void onCopy() {
@@ -176,8 +263,14 @@ public class kitFrame extends JFrame {
         for (int i = 0; i < input.length && i <= 6; i++) {
             message[i] = input[i];
         }
-
-        sb.append(menuMap.get(message[5])).append(message[4]).append(":\n");
+        if (resultArea.getText().trim().equals("") && !newMenuField.getText().trim().equals("")) {
+            sb.append("menu-settings:").append("\n");
+            sb.append("  name: '").append(newMenuField.getText()).append("'\n");
+            sb.append("  rows: ").append(Integer.valueOf(message[4]) + 1).append("\n");
+            sb.append("  open-with-item:\n");
+            sb.append("\n");
+        }
+        sb.append(menuMap.get(message[4])).append(message[5]).append(":\n");
         sb.append("  NAME: '").append(message[0]).append("'\n");
         if (!message[1].isEmpty()) {
             sb.append("  LORE:\n");
@@ -201,16 +294,21 @@ public class kitFrame extends JFrame {
             } else if (message[3].contains("v")) {
                 String[] vaults = message[3].split("v");
                 sb.append("  PRICE: ").append(vaults[0]).append("\n");
+            } else {
+                sb.append("  PRICE: ").append(message[3]).append("\n");
             }
         }
-        if (!message[4].isEmpty()) {
+        if (!message[6].isEmpty()) {
             sb.append("  COMMAND: '").append(message[4]).append("'\n");
         }
         if (yesButton.isSelected()) {
             sb.append("  ENCHANTMENT: 'PROTECTION,1'\n");
         }
-        sb.append("  POSITION-X: ").append(message[6]).append("\n");
-        sb.append("  POSITION-Y: ").append(message[5]).append("\n");
+        if (yesOpenButton.isSelected()) {
+            sb.append("  KEEP-OPEN: true\n");
+        }
+        sb.append("  POSITION-X: ").append(message[5]).append("\n");
+        sb.append("  POSITION-Y: ").append(message[4]).append("\n");
         return sb.toString();
     }
 
@@ -240,16 +338,16 @@ public class kitFrame extends JFrame {
         }
     }
 
-    public boolean allFull() {
-        if (isEmpty(nameField) || isEmpty(showField) || isEmpty(loreField) || isEmpty(xField) || isEmpty(yField) || isEmpty(costField) || isEmpty(commandField)) {
-            return false;
-        } else {
-            return true;
-        }
-    }
+//    public boolean allFull() {
+//        if (isEmpty(nameField) || isEmpty(showField) || isEmpty(loreField) || isEmpty(xField) || isEmpty(yField) || isEmpty(costField) || isEmpty(commandField)) {
+//            return false;
+//        } else {
+//            return true;
+//        }
+//    }
 
     public boolean isIllegal() {
-        if ((xField.getText().length() == 0 || yField.getText().length() == 0) && jlField.getText().length() == 0) {
+        if (jlField.getText().length() == 0 && (xField.getText().length() == 0 || yField.getText().length() == 0)) {
             return true;
         } else {
             return false;
@@ -257,7 +355,7 @@ public class kitFrame extends JFrame {
     }
 
     public boolean isIntergerIllegal() {
-        if (jlField.getText().length() == 0 && Integer.valueOf(xField.getText()) > 9 || Integer.valueOf(xField.getText()) < 1 || Integer.valueOf(yField.getText()) > 6 || Integer.valueOf(yField.getText()) < 1) {
+        if (jlField.getText().length() == 0 && (Integer.valueOf(xField.getText()) > 9 || Integer.valueOf(xField.getText()) < 1 || Integer.valueOf(yField.getText()) > 6 || Integer.valueOf(yField.getText()) < 1)) {
             return true;
         } else {
             return false;
@@ -274,6 +372,13 @@ public class kitFrame extends JFrame {
         y = yField.getText();
         x = xField.getText();
         command = commandField.getText();
+        if (resultArea.getText().trim().equals("") && !newMenuField.getText().trim().equals("")) {
+            sb.append("menu-settings:").append("\n");
+            sb.append("  name: '").append(newMenuField.getText()).append("'\n");
+            sb.append("  rows: ").append(Integer.valueOf(y) + 1).append("\n");
+            sb.append("  open-with-item:\n");
+            sb.append("\n");
+        }
         sb.append(menuMap.get(y)).append(x).append(":\n");
         sb.append("  NAME: '").append(name).append("'\n");
         if (!lore.isEmpty()) {
@@ -298,6 +403,8 @@ public class kitFrame extends JFrame {
             } else if (pay.contains("v")) {
                 String[] vaults = pay.split("v");
                 sb.append("  PRICE: ").append(vaults[0]).append("\n");
+            } else {
+                sb.append("  PRICE: ").append(pay).append("\n");
             }
         }
         if (!command.isEmpty()) {
@@ -306,9 +413,11 @@ public class kitFrame extends JFrame {
         if (yesButton.isSelected()) {
             sb.append("  ENCHANTMENT: 'PROTECTION,1'\n");
         }
+        if (yesOpenButton.isSelected()) {
+            sb.append("  KEEP-OPEN: true\n");
+        }
         sb.append("  POSITION-X: ").append(x).append("\n");
         sb.append("  POSITION-Y: ").append(y).append("\n");
         return sb.toString();
     }
-
 }
