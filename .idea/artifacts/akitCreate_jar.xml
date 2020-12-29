@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="akitCreate:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/akitCreate_jar</output-path>
+    <root id="archive" name="akitCreate.jar">
+      <element id="module-output" name="akitCreate" />
+    </root>
+  </artifact>
+</component>
