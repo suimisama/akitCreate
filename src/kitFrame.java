@@ -21,9 +21,6 @@ import javax.swing.undo.UndoManager;
 public class kitFrame extends JFrame {
     JTabbedPane jTabbedPane = new JTabbedPane(JTabbedPane.TOP);
     // 菜单粗略设计栏的组件
-    DealProperties dealProperties = new DealProperties();
-    ResourceBundle resourceBundle = ResourceBundle.getBundle("config");
-    String isInitPath = resourceBundle.getString("isInitPath");
     boolean isFull = true;
     int nums = 0;
     Clipboard clipboard;
@@ -63,9 +60,6 @@ public class kitFrame extends JFrame {
 
     public kitFrame(String title) {
         super(title);
-        if (isInitPath.equals("true")) {
-            initProperties();
-        }
         initManager();
         initMenu();
         initMap();
@@ -810,6 +804,7 @@ public class kitFrame extends JFrame {
     // 获取光标位置
     public void getCursorPosition(JTextArea text) {
         text.addCaretListener(new CaretListener() {
+            @Override
             public void caretUpdate(CaretEvent e) {
                 try {
                     int pos = text.getCaretPosition();
