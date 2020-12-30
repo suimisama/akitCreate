@@ -1,19 +1,25 @@
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.event.DocumentEvent;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class kitFrame extends JFrame {
-    boolean isNew = true;
+    boolean isFull = true;
     int nums = 0;
     Clipboard clipboard;
     ArrayList<String> saveList = new ArrayList<>();
     HashMap<String, String> menuMap = new HashMap<>();
+    HashMap<String, String> colorMap = new HashMap<>();
     HashMap<Integer, String> clearMap = new HashMap<>();
-    JPanel namePanel, xPanel, yPanel, costPanel, resultPanel, jlPanel, fzPanel, showPanel, lorePanel, radioPanel, commandPanel, menuPanel, newMenuPanel;
+    JPanel namePanel, xPanel, yPanel, costPanel, resultPanel, jlPanel, fzPanel, showPanel, lorePanel, radioPanel, commandPanel, menuPanel, newMenuPanel, authorPanel, colorDescriptionPanel;
+    JLabel authorLabel = new JLabel("作者:W_Pencil,版本号:1.0"), colorLabel1 = new JLabel("&4=大红 &c=浅红 &6=土黄 &e=金黄 &2=绿 &a=浅绿 &b=蓝绿"),
+            colorLabel2 = new JLabel("&3=天蓝 &1=深蓝 &9=蓝紫 &d=粉红 &5=品红 &f=白 &7=灰 &8=深灰\n"), colorLabel3 = new JLabel("&0=黑 &l=加粗 &o=倾斜 &n=下划线 &m=删除线");
     JTextField newMenuField = new JTextField(30);
     JTextField yField = new JTextField(30);
     JTextField menuField = new JTextField(30);
@@ -30,16 +36,18 @@ public class kitFrame extends JFrame {
     JRadioButton noButton = new JRadioButton("无附魔效果", true);
     JRadioButton yesOpenButton = new JRadioButton("有KEEP-OPEN");
     JRadioButton noOpenButton = new JRadioButton("无KEEP-OPEN", true);
-    JButton fzButton = new JButton("复制代码"), clearButton = new JButton("清空结果栏"), clearRearButton = new JButton("删除最后一个菜单"), resultButton = new JButton("显示结果"), menuButton = new JButton("自动复制权限代码"), appendButton = new JButton("添加到尾部");
-    Box vB1 = Box.createVerticalBox();
+    JButton fzButton = new JButton("复制代码"), clearButton = new JButton("清空结果栏"), clearRearButton = new JButton("删除最后一个菜单"), resultButton = new JButton("显示结果"), menuButton = new JButton("复制权限代码"), appendButton = new JButton("添加到尾部");
+    JButton mbButton = new JButton("一键生成模板");
+    Box vB1 = Box.createVerticalBox(), vB2 = Box.createVerticalBox(), vB3 = Box.createHorizontalBox();
 
     public kitFrame(String title) {
         super(title);
-        menuMap = initMap();
+        initMap();
         init();
         initField();
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.pack();
+        this.setSize(950, 560);
+        centerOnScreen();
         this.setVisible(true);
     }
 
@@ -55,19 +63,33 @@ public class kitFrame extends JFrame {
 
 
     public void initField() {
+        colorDescriptionPanel = new JPanel();
+        colorDescriptionPanel.setLayout(new BorderLayout());
+        colorDescriptionPanel.add(colorLabel1, BorderLayout.NORTH);
+        colorDescriptionPanel.add(colorLabel2, BorderLayout.CENTER);
+        colorDescriptionPanel.add(colorLabel3, BorderLayout.SOUTH);
+
+        authorPanel = new JPanel();
+        authorPanel.add(authorLabel);
         clipboard = this.getToolkit().getSystemClipboard();
         resultPanel = new JPanel();
         jlField.setLineWrap(true);
+
         JLabel resultLabel = new JLabel("菜单代码:");
         JLabel jlLabel = new JLabel("简略输入:");
         JLabel fenge = new JLabel(" | ");
+
         g1.add(noButton);
         g1.add(yesButton);
         g2.add(yesOpenButton);
         g2.add(noOpenButton);
+
         radioPanel = new JPanel();
+
         resultArea.setLineWrap(true);
+
         resultPanel = new JPanel();
+
         fzPanel = new JPanel();
         fzPanel.add(resultButton);
         fzPanel.add(fzButton);
@@ -85,16 +107,21 @@ public class kitFrame extends JFrame {
         xPanel = createPane("格子列数:", xField);
         costPanel = createPane("消耗金额:", costField);
         newMenuPanel = createPane("新菜单名:", newMenuField);
+
         jlPanel = new JPanel();
         jlPanel.add(jlLabel);
         jlPanel.add(jlField);
+        jlPanel.setBorder(BorderFactory.createEmptyBorder(8, 0, 8, 0));
+
         commandPanel = createPane("执行命令:", commandField);
+
         radioPanel.add(noButton);
         radioPanel.add(yesButton);
         radioPanel.add(fenge);
         radioPanel.add(noOpenButton);
         radioPanel.add(yesOpenButton);
-        vB1.add(new JScrollPane(jlPanel));
+
+        vB1.add(jlPanel);
         vB1.add(newMenuPanel);
         vB1.add(namePanel);
         vB1.add(lorePanel);
@@ -108,8 +135,14 @@ public class kitFrame extends JFrame {
         resultPanel.add(new JScrollPane(resultArea));
         vB1.add(resultPanel);
         vB1.add(menuPanel);
-        this.add(vB1, BorderLayout.CENTER);
-        this.add(fzPanel, BorderLayout.SOUTH);
+        vB2.add(resultPanel);
+        vB2.add(menuPanel);
+        vB2.add(fzPanel);
+        vB2.add(colorDescriptionPanel);
+        vB3.add(vB1);
+        vB3.add(vB2);
+        this.add(authorPanel, BorderLayout.PAGE_START);
+        this.add(vB3, BorderLayout.CENTER);
 
         jlField.addCaretListener(e -> {
             if (jlField.getText().length() != 0) {
@@ -157,9 +190,39 @@ public class kitFrame extends JFrame {
                     commandField.setText("");
                 }
                 if (newMenuField.getText().length() != 0) {
-                    menuField.setText(newMenuField.getText());
+                    menuField.setText(newMenuField.getText().substring(newMenuField.getText().lastIndexOf("]") + 1));
                 }
                 nums++;
+            }
+        });
+        xField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                isFull = true;
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+            }
+        });
+        yField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                isFull = true;
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
             }
         });
         fzButton.addActionListener(e -> {
@@ -168,14 +231,28 @@ public class kitFrame extends JFrame {
         menuButton.addActionListener(e -> {
             onCopyMenu();
         });
+        menuField.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getButton() == MouseEvent.BUTTON1) {
+                    showCopyResult();
+                }
+            }
+        });
         appendButton.addActionListener(e -> {
-            onAppend();
+
+            if(isFull){
+                onAppend();
+            }
         });
         clearButton.addActionListener(e -> {
             onClear();
+            isFull = true;
         });
         clearRearButton.addActionListener(e -> {
             resultArea.setText(getString(resultArea.getText()));
+
+            isFull = true;
         });
     }
 
@@ -191,6 +268,15 @@ public class kitFrame extends JFrame {
         } else if (isIntergerIllegal()) {
             JOptionPane.showMessageDialog(this, "x应该在1~9之间,y应该在1~6之间!");
         } else {
+            if (Integer.valueOf(xField.getText()) < 9) {
+                xField.setText(Integer.toString(Integer.valueOf(xField.getText()) + 1));
+            } else if (Integer.valueOf(yField.getText()) < 6) {
+                yField.setText(Integer.toString(Integer.valueOf(yField.getText()) + 1));
+                xField.setText("1");
+            }
+            if (newMenuField.getText().length() != 0) {
+                menuField.setText(replaceSubString(newMenuField.getText()));
+            }
             if (jlField.getText().length() != 0) {
                 StringBuilder fore = new StringBuilder(resultArea.getText());
                 if (!resultArea.getText().trim().equals("")) {
@@ -206,7 +292,11 @@ public class kitFrame extends JFrame {
                 fore.append(output());
                 resultArea.setText(fore.toString());
             }
-            nums++;
+            menuField.setForeground(Color.lightGray);
+            menuField.setBackground(Color.white);
+            if (Integer.valueOf(yField.getText()) == 6 && Integer.valueOf(xField.getText()) == 9) {
+                isFull = false;
+            }
         }
     }
 
@@ -223,6 +313,12 @@ public class kitFrame extends JFrame {
         for (int i = 0; i < index; i++) {
             sb.append(r[i]).append("\n");
         }
+        if (Integer.valueOf(xField.getText()) > 1) {
+            xField.setText(Integer.toString(Integer.valueOf(xField.getText()) - 1));
+        } else if (Integer.valueOf(yField.getText()) > 0) {
+            yField.setText(Integer.toString(Integer.valueOf(yField.getText()) - 1));
+            xField.setText("9");
+        }
         return sb.toString();
     }
 
@@ -232,10 +328,18 @@ public class kitFrame extends JFrame {
     }
 
     private void onCopyMenu() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("lp group default permission set chestcommands.open.").append(menuField.getText()).append(".yml");
-        StringSelection copyResult = new StringSelection(sb.toString());
-        clipboard.setContents(copyResult, null);
+        if (menuField.getText().length() != 0) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("lp group default permission set chestcommands.open.").append(menuField.getText()).append(".yml");
+            StringSelection copyResult = new StringSelection(sb.toString());
+            menuField.setForeground(Color.lightGray);
+            menuField.setBackground(Color.white);
+            menuField.setText("复制成功！");
+            menuField.setEditable(false);
+            clipboard.setContents(copyResult, null);
+        } else if (menuField.getText().length() == 0 || "复制成功！".equals(menuField.getText().trim())) {
+            JOptionPane.showMessageDialog(this, "菜单名不能为空!");
+        }
     }
 
     public JPanel createPane(String name, JTextField textField) {
@@ -248,15 +352,33 @@ public class kitFrame extends JFrame {
         return tempPanel;
     }
 
-    public HashMap<String, String> initMap() {
-        HashMap<String, String> m = new HashMap<>();
-        m.put("1", "A");
-        m.put("2", "B");
-        m.put("3", "C");
-        m.put("4", "D");
-        m.put("5", "E");
-        m.put("6", "F");
-        return m;
+    public void initMap() {
+        menuMap.put("1", "A");
+        menuMap.put("2", "B");
+        menuMap.put("3", "C");
+        menuMap.put("4", "D");
+        menuMap.put("5", "E");
+        menuMap.put("6", "F");
+        colorMap.put("[大红]", "&4");
+        colorMap.put("[浅红]", "&c");
+        colorMap.put("[土黄]", "&6");
+        colorMap.put("[金黄]", "&e");
+        colorMap.put("[绿]", "&2");
+        colorMap.put("[浅绿]", "&a");
+        colorMap.put("[蓝绿]", "&b");
+        colorMap.put("[天蓝]", "&3");
+        colorMap.put("[深蓝]", "&1");
+        colorMap.put("[蓝紫]", "&9");
+        colorMap.put("[粉红]", "&d");
+        colorMap.put("[品红]", "&5");
+        colorMap.put("[白]", "&f");
+        colorMap.put("[灰]", "&7");
+        colorMap.put("[深灰]", "&8");
+        colorMap.put("[黑]", "&0");
+        colorMap.put("[加粗}", "&l");
+        colorMap.put("[倾斜]", "&o");
+        colorMap.put("[下划线]", "&n");
+        colorMap.put("[删除线]", "&m");
     }
 
     public String menuJl(String rtemp) {
@@ -268,7 +390,7 @@ public class kitFrame extends JFrame {
         }
         if (resultArea.getText().trim().equals("") && !newMenuField.getText().trim().equals("")) {
             sb.append("menu-settings:").append("\n");
-            sb.append("  name: '").append(newMenuField.getText()).append("'\n");
+            sb.append("  name: '").append(replaceSubString(newMenuField.getText())).append("'\n");
             sb.append("  rows: ").append(Integer.valueOf(message[4]) + 2).append("\n");
             sb.append("  open-with-item:\n");
             sb.append("\n");
@@ -289,6 +411,8 @@ public class kitFrame extends JFrame {
             } else {
                 sb.append("  ID: ").append(message[2]).append("\n");
             }
+        } else {
+            sb.append("  ID: ").append("160\n").append("  DATA-VALUE: 7\n");
         }
         if (!message[3].isEmpty()) {
             if (message[3].contains("p")) {
@@ -312,7 +436,31 @@ public class kitFrame extends JFrame {
         }
         sb.append("  POSITION-X: ").append(message[5]).append("\n");
         sb.append("  POSITION-Y: ").append(message[4]).append("\n");
-        return sb.toString();
+        return replaceSubString(sb.toString());
+    }
+
+    public String replaceSubString(String parent) {
+        String a1 = parent.replace("[大红]", "&4");
+        String a2 = a1.replace("[浅红]", "&c");
+        String a3 = a2.replace("[土黄]", "&6");
+        String a4 = a3.replace("[金黄]", "&e");
+        String a5 = a4.replace("[绿]", "&2");
+        String a6 = a5.replace("[浅绿]", "&a");
+        String a7 = a6.replace("[蓝绿]", "&b");
+        String a8 = a7.replace("[天蓝]", "&3");
+        String a9 = a8.replace("[深蓝]", "&1");
+        String a10 = a9.replace("[蓝紫]", "&9");
+        String a11 = a10.replace("[粉红]", "&d");
+        String a12 = a11.replace("[品红]", "&5");
+        String a13 = a12.replace("[白]", "&f");
+        String a14 = a13.replace("[灰]", "&7");
+        String a15 = a14.replace("[深灰]", "&8");
+        String a16 = a15.replace("[黑]", "&0");
+        String a17 = a16.replace("[加粗]", "&l");
+        String a18 = a17.replace("[倾斜]", "&o");
+        String a19 = a18.replace("[下划线]", "&n");
+        String a20 = a19.replace("[删除线]", "&m");
+        return a20;
     }
 
     public void addActions(JTextField jTextField) {
@@ -377,7 +525,7 @@ public class kitFrame extends JFrame {
         command = commandField.getText();
         if (resultArea.getText().trim().equals("") && !newMenuField.getText().trim().equals("")) {
             sb.append("menu-settings:").append("\n");
-            sb.append("  name: '").append(newMenuField.getText()).append("'\n");
+            sb.append("  name: '").append(replaceSubString(newMenuField.getText())).append("'\n");
             sb.append("  rows: ").append(Integer.valueOf(y) + 2).append("\n");
             sb.append("  open-with-item:\n");
             sb.append("\n");
@@ -388,6 +536,7 @@ public class kitFrame extends JFrame {
             sb.append("  LORE:\n");
             String[] lores = lore.split(";");
             for (int j = 0; j < lores.length; j++) {
+                replaceSubString(lores[j]);
                 sb.append("    - '").append(lores[j]).append("'\n");
             }
         }
@@ -398,6 +547,8 @@ public class kitFrame extends JFrame {
             } else {
                 sb.append("  ID: ").append(show).append("\n");
             }
+        } else {
+            sb.append("  ID: ").append("160\n").append("  DATA-VALUE: 7\n");
         }
         if (!pay.isEmpty()) {
             if (pay.contains("p")) {
@@ -421,6 +572,25 @@ public class kitFrame extends JFrame {
         }
         sb.append("  POSITION-X: ").append(x).append("\n");
         sb.append("  POSITION-Y: ").append(y).append("\n");
-        return sb.toString();
+        return replaceSubString(sb.toString());
+    }
+
+    public void showCopyResult() {
+        if (!menuField.isEditable()) {
+            menuField.setText("");
+            menuField.setForeground(Color.BLACK);
+            menuField.setEditable(true);
+        }
+    }
+
+    public void centerOnScreen() {
+        // 获取屏幕大小
+        int screenWidth = Toolkit.getDefaultToolkit().getScreenSize().width;
+        int screenHeight = Toolkit.getDefaultToolkit().getScreenSize().height;
+        // 获取软件窗口大小
+        int width = this.getWidth();
+        int height = this.getHeight();
+        // 根据公式让屏幕处于中央
+        this.setBounds((screenWidth - width) / 2, (screenHeight - height) / 2, width, height);
     }
 }
