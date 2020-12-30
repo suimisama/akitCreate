@@ -24,8 +24,8 @@ public class kitFrame extends JFrame {
     int nums = 0;
     Clipboard clipboard;
     JMenuBar menuBar = new JMenuBar();
-    JMenu fileMenu = new JMenu("文件");
-    JMenuItem createPathItem = new JMenuItem("选择菜单存放路径");
+    JMenu fileMenu = new JMenu("文件"), settingMenu = new JMenu("设置");
+    JMenuItem createPathItem = new JMenuItem("选择菜单存放路径"), alwaysFrontItem = new JMenuItem("总在最前");
     ArrayList<String> saveList = new ArrayList<>();
     HashMap<String, String> menuMap = new HashMap<>();
     HashMap<String, String> colorMap = new HashMap<>();
@@ -83,13 +83,20 @@ public class kitFrame extends JFrame {
 
     public void initMenu() {
         fileMenu.add(createPathItem);
+
+        settingMenu.add(alwaysFrontItem);
+
         menuBar.add(fileMenu);
+        menuBar.add(settingMenu);
 
         createPathItem.addActionListener(e -> {
             onCreateChooser();
             String key = "isInitPath";
             String finalValue = "false";
 //            dealProperties.setProper(key, finalValue);
+        });
+        alwaysFrontItem.addActionListener(e -> {
+            this.setAlwaysOnTop(true);
         });
         this.setJMenuBar(menuBar);
     }
@@ -780,4 +787,3 @@ public class kitFrame extends JFrame {
         });
     }
 }
-
