@@ -24,6 +24,7 @@ public class kitFrame extends JFrame {
     boolean isFull = true;
     int nums = 0;
     Clipboard clipboard;
+    String path = System.getProperty("user.dir") + "\\src\\";
     JMenuBar menuBar = new JMenuBar();
     JMenu fileMenu = new JMenu("文件"), settingMenu = new JMenu("设置");
     JMenuItem createPathItem = new JMenuItem("选择菜单存放路径"), alwaysFrontItem = new JMenuItem("总在最前");
@@ -52,7 +53,7 @@ public class kitFrame extends JFrame {
     JRadioButton noOpenButton = new JRadioButton("无KEEP-OPEN", true);
     JButton fzButton = new JButton("复制代码"), clearButton = new JButton("清空结果"), clearRearButton = new JButton("删除尾部"), resultButton = new JButton("显示结果"), menuButton = new JButton("复制权限代码"), appendButton = new JButton("尾部添加");
     JButton mbButton = new JButton("生成文件");
-    Box vB1 = Box.createVerticalBox(), vB2 = Box.createVerticalBox(), vB3 = Box.createHorizontalBox(),  vB4 = Box.createVerticalBox();
+    Box vB1 = Box.createVerticalBox(), vB2 = Box.createVerticalBox(), vB3 = Box.createHorizontalBox(), vB4 = Box.createVerticalBox();
     UndoManager undoManager = new UndoManager();
 
     // 菜单详细细节添加
@@ -111,15 +112,13 @@ public class kitFrame extends JFrame {
     }
 
     private void onCreateChooser() {
-        boolean flag = true;
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         int ret = fileChooser.showOpenDialog(this);
         if (ret == JFileChooser.APPROVE_OPTION) {
             File getPath = fileChooser.getSelectedFile();
-            String key = "path";
-            String finalValue = getPath.getAbsolutePath();
-//            dealProperties.setProper(key, finalValue);
+            String path = getPath.getAbsolutePath() + newMenuField.getText() + ".yml";
+            this.path = path;
         }
     }
 
@@ -760,17 +759,17 @@ public class kitFrame extends JFrame {
     public void createMenu() throws IOException {
         if (newMenuField.getText().length() != 0 && resultArea.getText().length() != 0) {
             String path = System.getProperty("user.dir") + "\\src\\" + newMenuField.getText().substring(newMenuField.getText().lastIndexOf("]") + 1) + ".yml";
-            save(getCreatePath());
+            save(this.path);
             JOptionPane.showMessageDialog(this, "创建成功!");
         } else {
             JOptionPane.showMessageDialog(this, "创建失败！菜单名和菜单代码不能为空！");
         }
     }
 
-    private String getCreatePath() {
+    private void setCreatePath() {
 //        String path = resourceBundle.getString("path");
         String path = System.getProperty("user.dir") + "\\src\\" + newMenuField.getText() + ".yml";
-        return path;
+        this.path = path;
     }
 
     public void addUnRedo(JTextField jTextField) {
