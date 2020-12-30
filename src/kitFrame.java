@@ -6,13 +6,22 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.*;
 
 public class kitFrame extends JFrame {
+    DealProperties dealProperties = new DealProperties();
+    ResourceBundle resourceBundle = ResourceBundle.getBundle("config");
+    String isInitPath = resourceBundle.getString("isInitPath");
     boolean isFull = true;
     int nums = 0;
     Clipboard clipboard;
+    JMenuBar menuBar = new JMenuBar();
+    JMenu fileMenu = new JMenu("文件");
+    JMenuItem createPathItem = new JMenuItem("选择菜单存放路径");
     ArrayList<String> saveList = new ArrayList<>();
     HashMap<String, String> menuMap = new HashMap<>();
     HashMap<String, String> colorMap = new HashMap<>();
@@ -37,16 +46,21 @@ public class kitFrame extends JFrame {
     JRadioButton yesOpenButton = new JRadioButton("有KEEP-OPEN");
     JRadioButton noOpenButton = new JRadioButton("无KEEP-OPEN", true);
     JButton fzButton = new JButton("复制代码"), clearButton = new JButton("清空结果栏"), clearRearButton = new JButton("删除最后一个菜单"), resultButton = new JButton("显示结果"), menuButton = new JButton("复制权限代码"), appendButton = new JButton("添加到尾部");
-    JButton mbButton = new JButton("一键生成模板");
+    JButton mbButton = new JButton("生成菜单文件");
     Box vB1 = Box.createVerticalBox(), vB2 = Box.createVerticalBox(), vB3 = Box.createHorizontalBox();
 
     public kitFrame(String title) {
         super(title);
+        if (isInitPath.equals("true")) {
+            initProperties();
+        }
+        initMenu();
         initMap();
         init();
         initField();
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setSize(950, 560);
+//        this.setSize(950, 560);
+        this.pack();
         centerOnScreen();
         this.setVisible(true);
     }
@@ -61,6 +75,31 @@ public class kitFrame extends JFrame {
         addActions(commandField);
     }
 
+    public void initMenu() {
+        fileMenu.add(createPathItem);
+        menuBar.add(fileMenu);
+
+        createPathItem.addActionListener(e -> {
+            onCreateChooser();
+            String key = "isInitPath";
+            String finalValue = "false";
+//            dealProperties.setProper(key, finalValue);
+        });
+        this.setJMenuBar(menuBar);
+    }
+
+    private void onCreateChooser() {
+        boolean flag = true;
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        int ret = fileChooser.showOpenDialog(this);
+        if (ret == JFileChooser.APPROVE_OPTION) {
+            File getPath = fileChooser.getSelectedFile();
+            String key = "path";
+            String finalValue = getPath.getAbsolutePath();
+//            dealProperties.setProper(key, finalValue);
+        }
+    }
 
     public void initField() {
         colorDescriptionPanel = new JPanel();
@@ -68,6 +107,9 @@ public class kitFrame extends JFrame {
         colorDescriptionPanel.add(colorLabel1, BorderLayout.NORTH);
         colorDescriptionPanel.add(colorLabel2, BorderLayout.CENTER);
         colorDescriptionPanel.add(colorLabel3, BorderLayout.SOUTH);
+
+        colorLabel3.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
+        colorLabel2.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
 
         authorPanel = new JPanel();
         authorPanel.add(authorLabel);
@@ -96,6 +138,7 @@ public class kitFrame extends JFrame {
         fzPanel.add(appendButton);
         fzPanel.add(clearButton);
         fzPanel.add(clearRearButton);
+        fzPanel.add(mbButton);
 
         menuPanel = createPane("菜单名称:", menuField);
         menuPanel.add(menuButton);
@@ -190,12 +233,18 @@ public class kitFrame extends JFrame {
                     commandField.setText("");
                 }
                 if (newMenuField.getText().length() != 0) {
-                    menuField.setText(newMenuField.getText().substring(newMenuField.getText().lastIndexOf("]") + 1));
+                    /*
+                     * 二次过滤
+                     * 第一次过滤[]的中文颜色前缀,第二次过滤&开头的英文颜色前缀
+                     */
+                    String temp = newMenuField.getText().substring(newMenuField.getText().lastIndexOf("]") + 1);
+                    String finalTemp = temp.substring(temp.lastIndexOf("&") + 2);
+                    menuField.setText(finalTemp);
                 }
                 nums++;
             }
         });
-        xField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+        xField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
 
             @Override
             public void insertUpdate(DocumentEvent e) {
@@ -210,7 +259,7 @@ public class kitFrame extends JFrame {
             public void changedUpdate(DocumentEvent e) {
             }
         });
-        yField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+        yField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
 
             @Override
             public void insertUpdate(DocumentEvent e) {
@@ -241,7 +290,7 @@ public class kitFrame extends JFrame {
         });
         appendButton.addActionListener(e -> {
 
-            if(isFull){
+            if (isFull) {
                 onAppend();
             }
         });
@@ -253,6 +302,13 @@ public class kitFrame extends JFrame {
             resultArea.setText(getString(resultArea.getText()));
 
             isFull = true;
+        });
+        mbButton.addActionListener(e -> {
+            try {
+                createMenu();
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
         });
     }
 
@@ -313,11 +369,14 @@ public class kitFrame extends JFrame {
         for (int i = 0; i < index; i++) {
             sb.append(r[i]).append("\n");
         }
-        if (Integer.valueOf(xField.getText()) > 1) {
-            xField.setText(Integer.toString(Integer.valueOf(xField.getText()) - 1));
-        } else if (Integer.valueOf(yField.getText()) > 0) {
-            yField.setText(Integer.toString(Integer.valueOf(yField.getText()) - 1));
-            xField.setText("9");
+        // 当简略输入里面是空的时候,x和y才会有数字
+        if (jlField.getText().length() == 0) {
+            if (Integer.valueOf(xField.getText()) > 1) {
+                xField.setText(Integer.toString(Integer.valueOf(xField.getText()) - 1));
+            } else if (Integer.valueOf(yField.getText()) > 0) {
+                yField.setText(Integer.toString(Integer.valueOf(yField.getText()) - 1));
+                xField.setText("9");
+            }
         }
         return sb.toString();
     }
@@ -350,6 +409,13 @@ public class kitFrame extends JFrame {
         Border emptyBorder = BorderFactory.createEmptyBorder(8, 0, 8, 0);
         tempPanel.setBorder(emptyBorder);
         return tempPanel;
+    }
+
+    public void initProperties() {
+        String proPath = System.getProperty("user.dir") + "\\src\\config.properties";
+        String pathValue = System.getProperty("user.dir") + "\\src\\";
+        String key = "path";
+//        dealProperties.setProper(key, pathValue);
     }
 
     public void initMap() {
@@ -391,7 +457,11 @@ public class kitFrame extends JFrame {
         if (resultArea.getText().trim().equals("") && !newMenuField.getText().trim().equals("")) {
             sb.append("menu-settings:").append("\n");
             sb.append("  name: '").append(replaceSubString(newMenuField.getText())).append("'\n");
-            sb.append("  rows: ").append(Integer.valueOf(message[4]) + 2).append("\n");
+            if (Integer.valueOf(message[4]) < 6) {
+                sb.append("  rows: ").append(Integer.valueOf(message[4]) + 1).append("\n");
+            } else {
+                sb.append("  rows: ").append("6").append("\n");
+            }
             sb.append("  open-with-item:\n");
             sb.append("\n");
         }
@@ -592,5 +662,31 @@ public class kitFrame extends JFrame {
         int height = this.getHeight();
         // 根据公式让屏幕处于中央
         this.setBounds((screenWidth - width) / 2, (screenHeight - height) / 2, width, height);
+    }
+
+    public void save(String path) throws IOException {
+        File tempFile = new File(path);
+        if (!tempFile.exists()) {
+            tempFile.createNewFile();
+        }
+        BufferedWriter bw = new BufferedWriter(new FileWriter(path));
+        bw.write(resultArea.getText());
+        bw.close();
+    }
+
+    public void createMenu() throws IOException {
+        if (newMenuField.getText().length() != 0 && resultArea.getText().length() != 0) {
+            String path = System.getProperty("user.dir") + "\\src\\" + newMenuField.getText().substring(newMenuField.getText().lastIndexOf("]") + 1) + ".yml";
+            save(getCreatePath());
+            JOptionPane.showMessageDialog(this, "创建成功!");
+        } else {
+            JOptionPane.showMessageDialog(this, "创建失败！菜单名和菜单代码不能为空！");
+        }
+    }
+
+    private String getCreatePath() {
+//        String path = resourceBundle.getString("path");
+        String path = System.getProperty("user.dir") + "\\src\\" + newMenuField.getText() + ".yml";
+        return path;
     }
 }
