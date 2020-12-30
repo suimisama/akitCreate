@@ -4,6 +4,8 @@ import javax.swing.event.DocumentEvent;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.BufferedWriter;
@@ -11,6 +13,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import javax.swing.undo.UndoManager;
+
 
 public class kitFrame extends JFrame {
     DealProperties dealProperties = new DealProperties();
@@ -48,12 +52,14 @@ public class kitFrame extends JFrame {
     JButton fzButton = new JButton("复制代码"), clearButton = new JButton("清空结果栏"), clearRearButton = new JButton("删除最后一个菜单"), resultButton = new JButton("显示结果"), menuButton = new JButton("复制权限代码"), appendButton = new JButton("添加到尾部");
     JButton mbButton = new JButton("生成菜单文件");
     Box vB1 = Box.createVerticalBox(), vB2 = Box.createVerticalBox(), vB3 = Box.createHorizontalBox();
+    UndoManager undoManager = new UndoManager();
 
     public kitFrame(String title) {
         super(title);
         if (isInitPath.equals("true")) {
             initProperties();
         }
+        initManager();
         initMenu();
         initMap();
         init();
@@ -206,6 +212,7 @@ public class kitFrame extends JFrame {
                 commandField.setEditable(true);
             }
         });
+
         resultButton.addActionListener(e -> {
             if (isIllegal()) {
                 JOptionPane.showMessageDialog(this, "x和y不要留空!");
@@ -244,6 +251,8 @@ public class kitFrame extends JFrame {
                 nums++;
             }
         });
+
+
         xField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
 
             @Override
@@ -298,7 +307,7 @@ public class kitFrame extends JFrame {
             onClear();
             isFull = true;
         });
-         clearRearButton.addActionListener(e -> {
+        clearRearButton.addActionListener(e -> {
             resultArea.setText(getString(resultArea.getText()));
             if (jlField.getText().length() == 0 && xField.getText().length() != 0 && yField.getText().length() != 0) {
                 if (Integer.valueOf(xField.getText()) > 1) {
@@ -363,6 +372,60 @@ public class kitFrame extends JFrame {
         }
     }
 
+    public void initManager() {
+        resultArea.getDocument().addUndoableEditListener(undoManager);
+        resultArea.addKeyListener(new KeyListener() {
+
+            @Override
+            public void keyReleased(KeyEvent arg0) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_Z) {
+                    if (undoManager.canUndo()) {
+                        undoManager.undo();
+                    }
+                }
+                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_Y) {
+                    if (undoManager.canRedo()) {
+                        undoManager.redo();
+                    }
+                }
+            }
+
+            @Override
+            public void keyTyped(KeyEvent arg0) {
+            }
+        });
+        UndoManager manager = new UndoManager();
+        jlField.getDocument().addUndoableEditListener(undoManager);
+        jlField.addKeyListener(new KeyListener() {
+
+            @Override
+            public void keyReleased(KeyEvent arg0) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_Z) {
+                    if (undoManager.canUndo()) {
+                        undoManager.undo();
+                    }
+                }
+                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_Y) {
+                    if (undoManager.canRedo()) {
+                        undoManager.redo();
+                    }
+                }
+            }
+
+            @Override
+            public void keyTyped(KeyEvent arg0) {
+            }
+        });
+    }
+
     private String getString(String result) {
         int index = 0;
         String[] r = result.split("\\r?\\n");
@@ -406,6 +469,7 @@ public class kitFrame extends JFrame {
         tempPanel.add(textField);
         Border emptyBorder = BorderFactory.createEmptyBorder(8, 0, 8, 0);
         tempPanel.setBorder(emptyBorder);
+        addUnRedo(textField);
         return tempPanel;
     }
 
@@ -687,4 +751,33 @@ public class kitFrame extends JFrame {
         String path = System.getProperty("user.dir") + "\\src\\" + newMenuField.getText() + ".yml";
         return path;
     }
+
+    public void addUnRedo(JTextField jTextField) {
+        jTextField.getDocument().addUndoableEditListener(undoManager);
+        jTextField.addKeyListener(new KeyListener() {
+
+            @Override
+            public void keyReleased(KeyEvent arg0) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_Z) {
+                    if (undoManager.canUndo()) {
+                        undoManager.undo();
+                    }
+                }
+                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_Y) {
+                    if (undoManager.canRedo()) {
+                        undoManager.redo();
+                    }
+                }
+            }
+
+            @Override
+            public void keyTyped(KeyEvent arg0) {
+            }
+        });
+    }
 }
+
