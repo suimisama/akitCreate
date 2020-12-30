@@ -298,9 +298,16 @@ public class kitFrame extends JFrame {
             onClear();
             isFull = true;
         });
-        clearRearButton.addActionListener(e -> {
+         clearRearButton.addActionListener(e -> {
             resultArea.setText(getString(resultArea.getText()));
-
+            if (jlField.getText().length() == 0 && xField.getText().length() != 0 && yField.getText().length() != 0) {
+                if (Integer.valueOf(xField.getText()) > 1) {
+                    xField.setText(Integer.toString(Integer.valueOf(xField.getText()) - 1));
+                } else if (Integer.valueOf(yField.getText()) > 0) {
+                    yField.setText(Integer.toString(Integer.valueOf(yField.getText()) - 1));
+                    xField.setText("9");
+                }
+            }
             isFull = true;
         });
         mbButton.addActionListener(e -> {
@@ -368,15 +375,6 @@ public class kitFrame extends JFrame {
         }
         for (int i = 0; i < index; i++) {
             sb.append(r[i]).append("\n");
-        }
-        // 当简略输入里面是空的时候,x和y才会有数字
-        if (jlField.getText().length() == 0) {
-            if (Integer.valueOf(xField.getText()) > 1) {
-                xField.setText(Integer.toString(Integer.valueOf(xField.getText()) - 1));
-            } else if (Integer.valueOf(yField.getText()) > 0) {
-                yField.setText(Integer.toString(Integer.valueOf(yField.getText()) - 1));
-                xField.setText("9");
-            }
         }
         return sb.toString();
     }
