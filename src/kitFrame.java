@@ -1,5 +1,7 @@
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
@@ -17,6 +19,8 @@ import javax.swing.undo.UndoManager;
 
 
 public class kitFrame extends JFrame {
+    JTabbedPane jTabbedPane = new JTabbedPane(JTabbedPane.TOP);
+    // 菜单粗略设计栏的组件
     DealProperties dealProperties = new DealProperties();
     ResourceBundle resourceBundle = ResourceBundle.getBundle("config");
     String isInitPath = resourceBundle.getString("isInitPath");
@@ -30,7 +34,7 @@ public class kitFrame extends JFrame {
     HashMap<String, String> menuMap = new HashMap<>();
     HashMap<String, String> colorMap = new HashMap<>();
     HashMap<Integer, String> clearMap = new HashMap<>();
-    JPanel namePanel, xPanel, yPanel, costPanel, resultPanel, jlPanel, fzPanel, showPanel, lorePanel, radioPanel, commandPanel, menuPanel, newMenuPanel, authorPanel, colorDescriptionPanel;
+    JPanel namePanel, xPanel, yPanel, costPanel, resultPanel, jlPanel, fzPanel, fzPanel2, showPanel, lorePanel, radioPanel, commandPanel, menuPanel, newMenuPanel, authorPanel, colorDescriptionPanel;
     JLabel authorLabel = new JLabel("作者:W_Pencil,版本号:1.0"), colorLabel1 = new JLabel("&4=大红 &c=浅红 &6=土黄 &e=金黄 &2=绿 &a=浅绿 &b=蓝绿"),
             colorLabel2 = new JLabel("&3=天蓝 &1=深蓝 &9=蓝紫 &d=粉红 &5=品红 &f=白 &7=灰 &8=深灰\n"), colorLabel3 = new JLabel("&0=黑 &l=加粗 &o=倾斜 &n=下划线 &m=删除线");
     JTextField newMenuField = new JTextField(30);
@@ -49,10 +53,13 @@ public class kitFrame extends JFrame {
     JRadioButton noButton = new JRadioButton("无附魔效果", true);
     JRadioButton yesOpenButton = new JRadioButton("有KEEP-OPEN");
     JRadioButton noOpenButton = new JRadioButton("无KEEP-OPEN", true);
-    JButton fzButton = new JButton("复制代码"), clearButton = new JButton("清空结果栏"), clearRearButton = new JButton("删除最后一个菜单"), resultButton = new JButton("显示结果"), menuButton = new JButton("复制权限代码"), appendButton = new JButton("添加到尾部");
-    JButton mbButton = new JButton("生成菜单文件");
-    Box vB1 = Box.createVerticalBox(), vB2 = Box.createVerticalBox(), vB3 = Box.createHorizontalBox();
+    JButton fzButton = new JButton("复制代码"), clearButton = new JButton("清空结果"), clearRearButton = new JButton("删除尾部"), resultButton = new JButton("显示结果"), menuButton = new JButton("复制权限代码"), appendButton = new JButton("尾部添加");
+    JButton mbButton = new JButton("生成文件");
+    Box vB1 = Box.createVerticalBox(), vB2 = Box.createVerticalBox(), vB3 = Box.createHorizontalBox(),  vB4 = Box.createVerticalBox();
     UndoManager undoManager = new UndoManager();
+
+    // 菜单详细细节添加
+
 
     public kitFrame(String title) {
         super(title);
@@ -69,6 +76,14 @@ public class kitFrame extends JFrame {
         this.pack();
         centerOnScreen();
         this.setVisible(true);
+    }
+
+    public void initJTabbedPanel() {
+        jTabbedPane.addTab("粗略编辑", vB1);
+        jTabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
+        jTabbedPane.addTab("详细参数", vB4);
+        jTabbedPane.setMnemonicAt(1, KeyEvent.VK_2);
+        this.add(jTabbedPane);
     }
 
     public void init() {
@@ -115,14 +130,16 @@ public class kitFrame extends JFrame {
     }
 
     public void initField() {
+
         colorDescriptionPanel = new JPanel();
         colorDescriptionPanel.setLayout(new BorderLayout());
         colorDescriptionPanel.add(colorLabel1, BorderLayout.NORTH);
         colorDescriptionPanel.add(colorLabel2, BorderLayout.CENTER);
         colorDescriptionPanel.add(colorLabel3, BorderLayout.SOUTH);
 
-        colorLabel3.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
-        colorLabel2.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
+        colorLabel3.setBorder(BorderFactory.createEmptyBorder(0, 8, 8, 0));
+        colorLabel2.setBorder(BorderFactory.createEmptyBorder(0, 8, 4, 0));
+        colorLabel1.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 0));
 
         authorPanel = new JPanel();
         authorPanel.add(authorLabel);
@@ -146,12 +163,13 @@ public class kitFrame extends JFrame {
         resultPanel = new JPanel();
 
         fzPanel = new JPanel();
+        fzPanel2 = new JPanel();
         fzPanel.add(resultButton);
         fzPanel.add(fzButton);
         fzPanel.add(appendButton);
-        fzPanel.add(clearButton);
-        fzPanel.add(clearRearButton);
-        fzPanel.add(mbButton);
+        fzPanel2.add(clearButton);
+        fzPanel2.add(clearRearButton);
+        fzPanel2.add(mbButton);
 
         menuPanel = createPane("菜单名称:", menuField);
         menuPanel.add(menuButton);
@@ -194,8 +212,10 @@ public class kitFrame extends JFrame {
         vB2.add(resultPanel);
         vB2.add(menuPanel);
         vB2.add(fzPanel);
+        vB2.add(fzPanel2);
         vB2.add(colorDescriptionPanel);
-        vB3.add(vB1);
+        initJTabbedPanel();
+        vB3.add(jTabbedPane);
         vB3.add(vB2);
         this.add(authorPanel, BorderLayout.PAGE_START);
         this.add(vB3, BorderLayout.CENTER);
@@ -784,6 +804,22 @@ public class kitFrame extends JFrame {
             @Override
             public void keyTyped(KeyEvent arg0) {
             }
+        });
+    }
+
+    // 获取光标位置
+    public void getCursorPosition(JTextArea text) {
+        text.addCaretListener(new CaretListener() {
+            public void caretUpdate(CaretEvent e) {
+                try {
+                    int pos = text.getCaretPosition();
+                    int row = text.getLineOfOffset(pos) + 1;
+                    int col = pos - text.getLineStartOffset(row - 1) + 1;
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+
         });
     }
 }
