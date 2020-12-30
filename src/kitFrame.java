@@ -156,6 +156,9 @@ public class kitFrame extends JFrame {
                     showField.setText("");
                     commandField.setText("");
                 }
+                if (newMenuField.getText().length() != 0) {
+                    menuField.setText(newMenuField.getText());
+                }
                 nums++;
             }
         });
@@ -266,7 +269,7 @@ public class kitFrame extends JFrame {
         if (resultArea.getText().trim().equals("") && !newMenuField.getText().trim().equals("")) {
             sb.append("menu-settings:").append("\n");
             sb.append("  name: '").append(newMenuField.getText()).append("'\n");
-            sb.append("  rows: ").append(Integer.valueOf(message[4]) + 1).append("\n");
+            sb.append("  rows: ").append(Integer.valueOf(message[4]) + 2).append("\n");
             sb.append("  open-with-item:\n");
             sb.append("\n");
         }
@@ -375,7 +378,7 @@ public class kitFrame extends JFrame {
         if (resultArea.getText().trim().equals("") && !newMenuField.getText().trim().equals("")) {
             sb.append("menu-settings:").append("\n");
             sb.append("  name: '").append(newMenuField.getText()).append("'\n");
-            sb.append("  rows: ").append(Integer.valueOf(y) + 1).append("\n");
+            sb.append("  rows: ").append(Integer.valueOf(y) + 2).append("\n");
             sb.append("  open-with-item:\n");
             sb.append("\n");
         }
