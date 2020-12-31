@@ -10,11 +10,9 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.undo.UndoManager;
 
 
@@ -27,7 +25,7 @@ public class kitFrame extends JFrame {
     String path = System.getProperty("user.dir") + "\\src\\";
     JMenuBar menuBar = new JMenuBar();
     JMenu fileMenu = new JMenu("文件"), settingMenu = new JMenu("设置");
-    JMenuItem createPathItem = new JMenuItem("选择菜单存放路径"), alwaysFrontItem = new JMenuItem("总在最前");
+    JMenuItem createPathItem = new JMenuItem("选择菜单存放路径"), loadMenuItem = new JMenuItem("加载菜单"), alwaysFrontItem = new JMenuItem("总在最前");
     ArrayList<String> saveList = new ArrayList<>();
     HashMap<String, String> menuMap = new HashMap<>();
     HashMap<String, String> colorMap = new HashMap<>();
@@ -57,7 +55,10 @@ public class kitFrame extends JFrame {
     UndoManager undoManager = new UndoManager();
 
     // 菜单详细细节添加
-
+    JPanel blPanel;
+    JComboBox<String> blCombox = new JComboBox<>();
+    JButton blButton = new JButton("添加变量");
+    JLabel blLabel = new JLabel("变量列表");
 
     public kitFrame(String title) {
         super(title);
@@ -71,6 +72,14 @@ public class kitFrame extends JFrame {
         this.pack();
         centerOnScreen();
         this.setVisible(true);
+    }
+
+    public void initDetail() {
+        blPanel = new JPanel();
+        blPanel.add(blLabel);
+        blPanel.add(blCombox);
+        blPanel.add(blButton);
+        vB4.add(blPanel);
     }
 
     public void initJTabbedPanel() {
@@ -93,6 +102,7 @@ public class kitFrame extends JFrame {
 
     public void initMenu() {
         fileMenu.add(createPathItem);
+        fileMenu.add(loadMenuItem);
 
         settingMenu.add(alwaysFrontItem);
 
@@ -108,6 +118,13 @@ public class kitFrame extends JFrame {
         alwaysFrontItem.addActionListener(e -> {
             this.setAlwaysOnTop(true);
         });
+        loadMenuItem.addActionListener(e -> {
+            try {
+                load(onFileChooser());
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+        });
         this.setJMenuBar(menuBar);
     }
 
@@ -120,6 +137,20 @@ public class kitFrame extends JFrame {
             String path = getPath.getAbsolutePath() + newMenuField.getText() + ".yml";
             this.path = path;
         }
+    }
+
+    private String onFileChooser() {
+        String filePath = null;
+        JFileChooser fileChooser = new JFileChooser(path);
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("请选择yml文件", "yml");
+        fileChooser.setFileFilter(filter);
+        int ret = fileChooser.showOpenDialog(this);
+        if (ret == JFileChooser.APPROVE_OPTION) {
+            File getPath = fileChooser.getSelectedFile();
+            filePath = getPath.getAbsolutePath();
+        }
+        return filePath;
     }
 
     public void initField() {
@@ -268,6 +299,7 @@ public class kitFrame extends JFrame {
                     String finalTemp = temp.substring(temp.lastIndexOf("&") + 2);
                     menuField.setText(finalTemp);
                 }
+                onCopy();
                 nums++;
             }
         });
@@ -351,6 +383,8 @@ public class kitFrame extends JFrame {
 
     private void onClear() {
         resultArea.setText("");
+        menuField.setText("");
+        newMenuField.setText("");
         nums = 0;
     }
 
@@ -754,6 +788,18 @@ public class kitFrame extends JFrame {
         BufferedWriter bw = new BufferedWriter(new FileWriter(path));
         bw.write(resultArea.getText());
         bw.close();
+    }
+
+    public void load(String path) throws IOException {
+        File tempFile = new File(path);
+        BufferedReader br = new BufferedReader(new FileReader(path));
+        String line;
+        StringBuilder sb = new StringBuilder();
+        while ((line = br.readLine()) != null) {
+            sb.append(line).append("\n");
+        }
+        resultArea.setText(sb.toString());
+        br.close();
     }
 
     public void createMenu() throws IOException {
