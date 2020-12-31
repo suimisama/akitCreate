@@ -120,7 +120,9 @@ public class kitFrame extends JFrame {
         });
         loadMenuItem.addActionListener(e -> {
             try {
-                load(onFileChooser());
+                if (onFileChooser() != null) {
+                    load(onFileChooser());
+                }
             } catch (IOException ioException) {
                 ioException.printStackTrace();
             }
