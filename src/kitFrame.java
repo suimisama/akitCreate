@@ -297,8 +297,18 @@ public class kitFrame extends JFrame {
                      * 二次过滤
                      * 第一次过滤[]的中文颜色前缀,第二次过滤&开头的英文颜色前缀
                      */
-                    String temp = newMenuField.getText().substring(newMenuField.getText().lastIndexOf("]") + 1);
-                    String finalTemp = temp.substring(temp.lastIndexOf("&") + 2);
+                    String temp = newMenuField.getText();
+                    String finalTemp = null;
+                    int gl1 = newMenuField.getText().lastIndexOf("]");
+                    int gl2;
+                    if (gl1 != -1) {
+                        temp = temp.substring(gl1);
+                        gl2 = temp.lastIndexOf("&") + 2;
+                        finalTemp = temp.substring(gl2);
+                    } else {
+                        gl2 = newMenuField.getText().lastIndexOf("&") + 2;
+                        finalTemp = temp.substring(gl2);
+                    }
                     menuField.setText(finalTemp);
                 }
                 onCopy();
