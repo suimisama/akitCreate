@@ -129,7 +129,7 @@ public class kitFrame extends JFrame {
     }
 
     private void onCreateChooser() {
-        JFileChooser fileChooser = new JFileChooser();
+        JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir") + "\\src\\");
         fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         int ret = fileChooser.showOpenDialog(this);
         if (ret == JFileChooser.APPROVE_OPTION) {
