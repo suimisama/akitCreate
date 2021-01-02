@@ -17,12 +17,13 @@ import javax.swing.undo.UndoManager;
 
 
 public class kitFrame extends JFrame {
+    int x = 1, y = 1;
     JTabbedPane jTabbedPane = new JTabbedPane(JTabbedPane.TOP);
     // 菜单粗略设计栏的组件
-    boolean isFull = true;
+    boolean isFull = true, isChoose = false, isRepalce = false;
     int nums = 0;
     Clipboard clipboard;
-    String path = System.getProperty("user.dir") + "\\src\\";
+    String path = null;
     JMenuBar menuBar = new JMenuBar();
     JMenu fileMenu = new JMenu("文件"), settingMenu = new JMenu("设置");
     JMenuItem createPathItem = new JMenuItem("选择菜单存放路径"), loadMenuItem = new JMenuItem("加载菜单"), alwaysFrontItem = new JMenuItem("总在最前");
@@ -50,7 +51,7 @@ public class kitFrame extends JFrame {
     JRadioButton yesOpenButton = new JRadioButton("有KEEP-OPEN");
     JRadioButton noOpenButton = new JRadioButton("无KEEP-OPEN", true);
     JButton fzButton = new JButton("复制代码"), clearButton = new JButton("清空结果"), clearRearButton = new JButton("删除尾部"), resultButton = new JButton("显示结果"), menuButton = new JButton("复制权限代码"), appendButton = new JButton("尾部添加");
-    JButton mbButton = new JButton("生成文件");
+    JButton mbButton = new JButton("生成文件"), copyGrabButton = new JButton("复制Grab代码"), fastReplaceButton = new JButton("快速替换");
     Box vB1 = Box.createVerticalBox(), vB2 = Box.createVerticalBox(), vB3 = Box.createHorizontalBox(), vB4 = Box.createVerticalBox();
     UndoManager undoManager = new UndoManager();
 
@@ -101,7 +102,7 @@ public class kitFrame extends JFrame {
     }
 
     public void initMenu() {
-        fileMenu.add(createPathItem);
+//        fileMenu.add(createPathItem);
         fileMenu.add(loadMenuItem);
 
         settingMenu.add(alwaysFrontItem);
@@ -109,12 +110,12 @@ public class kitFrame extends JFrame {
         menuBar.add(fileMenu);
         menuBar.add(settingMenu);
 
-        createPathItem.addActionListener(e -> {
-            onCreateChooser();
-            String key = "isInitPath";
-            String finalValue = "false";
+//        createPathItem.addActionListener(e -> {
+//            onCreateChooser();
+//            String key = "isInitPath";
+//            String finalValue = "false";
 //            dealProperties.setProper(key, finalValue);
-        });
+//        });
         alwaysFrontItem.addActionListener(e -> {
             this.setAlwaysOnTop(true);
         });
@@ -130,15 +131,15 @@ public class kitFrame extends JFrame {
         this.setJMenuBar(menuBar);
     }
 
-    private void onCreateChooser() {
-        JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir") + "\\src\\");
+    private String onCreateChooser() {
+        JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
         fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         int ret = fileChooser.showOpenDialog(this);
         if (ret == JFileChooser.APPROVE_OPTION) {
             File getPath = fileChooser.getSelectedFile();
-            String path = getPath.getAbsolutePath() + newMenuField.getText() + ".yml";
-            this.path = path;
+            return getPath.getAbsolutePath() + "\\" + newMenuField.getText() + ".yml";
         }
+        return System.getProperty("user.dir") + "\\" + newMenuField.getText() + ".yml";
     }
 
     private String onFileChooser() {
@@ -193,9 +194,11 @@ public class kitFrame extends JFrame {
         fzPanel.add(resultButton);
         fzPanel.add(fzButton);
         fzPanel.add(appendButton);
+        fzPanel.add(copyGrabButton);
         fzPanel2.add(clearButton);
         fzPanel2.add(clearRearButton);
         fzPanel2.add(mbButton);
+        fzPanel2.add(fastReplaceButton);
 
         menuPanel = createPane("菜单名称:", menuField);
         menuPanel.add(menuButton);
@@ -305,9 +308,11 @@ public class kitFrame extends JFrame {
                         temp = temp.substring(gl1);
                         gl2 = temp.lastIndexOf("&") + 2;
                         finalTemp = temp.substring(gl2);
-                    } else {
+                    } else if (newMenuField.getText().lastIndexOf("&") != -1) {
                         gl2 = newMenuField.getText().lastIndexOf("&") + 2;
                         finalTemp = temp.substring(gl2);
+                    } else {
+                        finalTemp = temp;
                     }
                     menuField.setText(finalTemp);
                 }
@@ -390,6 +395,12 @@ public class kitFrame extends JFrame {
                 ioException.printStackTrace();
             }
         });
+        copyGrabButton.addActionListener(e -> {
+            onCreateJs();
+        });
+        fastReplaceButton.addActionListener(e -> {
+            onFastReplace();
+        });
     }
 
 
@@ -406,12 +417,6 @@ public class kitFrame extends JFrame {
         } else if (isIntergerIllegal()) {
             JOptionPane.showMessageDialog(this, "x应该在1~9之间,y应该在1~6之间!");
         } else {
-            if (Integer.valueOf(xField.getText()) < 9) {
-                xField.setText(Integer.toString(Integer.valueOf(xField.getText()) + 1));
-            } else if (Integer.valueOf(yField.getText()) < 6) {
-                yField.setText(Integer.toString(Integer.valueOf(yField.getText()) + 1));
-                xField.setText("1");
-            }
             if (newMenuField.getText().length() != 0) {
                 menuField.setText(replaceSubString(newMenuField.getText()));
             }
@@ -430,10 +435,18 @@ public class kitFrame extends JFrame {
                 fore.append(output());
                 resultArea.setText(fore.toString());
             }
+            this.x = Integer.parseInt(xField.getText());
+            this.y = Integer.parseInt(yField.getText());
             menuField.setForeground(Color.lightGray);
             menuField.setBackground(Color.white);
             if (Integer.valueOf(yField.getText()) == 6 && Integer.valueOf(xField.getText()) == 9) {
                 isFull = false;
+            }
+            if (Integer.valueOf(xField.getText()) < 9) {
+                xField.setText(Integer.toString(Integer.valueOf(xField.getText()) + 1));
+            } else if (Integer.valueOf(yField.getText()) < 6) {
+                yField.setText(Integer.toString(Integer.valueOf(yField.getText()) + 1));
+                xField.setText("1");
             }
         }
     }
@@ -793,6 +806,7 @@ public class kitFrame extends JFrame {
     }
 
     public void save(String path) throws IOException {
+        System.out.println(path);
         File tempFile = new File(path);
         if (!tempFile.exists()) {
             tempFile.createNewFile();
@@ -816,8 +830,17 @@ public class kitFrame extends JFrame {
 
     public void createMenu() throws IOException {
         if (newMenuField.getText().length() != 0 && resultArea.getText().length() != 0) {
-            String path = System.getProperty("user.dir") + "\\src\\" + newMenuField.getText().substring(newMenuField.getText().lastIndexOf("]") + 1) + ".yml";
-            save(this.path);
+//            if (isChoose) {
+//                save(this.path);
+//                JOptionPane.showMessageDialog(this, "创建成功!");
+//            } else {
+//                onCreateChooser();
+//                createMenu();
+//            }
+            String path = onCreateChooser();
+            String openPath = path.substring(0, path.lastIndexOf("\\"));
+            save(path);
+            java.awt.Desktop.getDesktop().open(new File(openPath));
             JOptionPane.showMessageDialog(this, "创建成功!");
         } else {
             JOptionPane.showMessageDialog(this, "创建失败！菜单名和菜单代码不能为空！");
@@ -873,5 +896,47 @@ public class kitFrame extends JFrame {
             }
 
         });
+    }
+
+    public void onCreateJs() {
+        String commandText = commandField.getText();
+        String grabName = commandText.substring(commandText.indexOf("run") + 4, commandText.lastIndexOf(" "));
+        int tagsID = 6 + (this.y - 1) * 9 + this.x;
+        StringBuilder sb = new StringBuilder();
+        sb.append(grabName).append(":\n");
+        String diaoxiang = loreField.getText().substring(loreField.getText().indexOf("个") + 1, loreField.getText().lastIndexOf("像") + 1);
+        sb.append("- $item:").append(showField.getText()).append(" 1 ").append("&c你必须拥有一个").append(diaoxiang).append("才能兑换称号\n");
+        sb.append("- '@console /lp user %player% permission set deluxetags.tag.").append(tagsID).append(" true'\n");
+        sb.append("- '@console /title %player% title [{\"text\":\"兑换成功\",\"color\":\"gold\",\"bold\":false,\"italic\":false,\"underlined\":false,\"strikethrough\":false,\"obfuscated\":false}]'");
+        StringSelection copyResult = new StringSelection(sb.toString());
+        clipboard.setContents(copyResult, null);
+    }
+
+    public void onFastReplace() {
+        String originName = nameField.getText();
+        if (isRepalce) {
+            nameField.setText("&9");
+        } else {
+            nameField.setText(originName.replace("&9", "&4&l"));
+        }
+        String originLore = loreField.getText();
+        if (isRepalce) {
+            loreField.setText("&2一个普通雕像可以兑换");
+        } else {
+            loreField.setText(originLore.replace("普通", "黄金"));
+        }
+        String originShow = showField.getText();
+        if (isRepalce) {
+            showField.setText(String.valueOf(Integer.parseInt(originShow) + 2));
+        } else {
+            showField.setText(String.valueOf(Integer.parseInt(originShow) + 1));
+        }
+        String originCommand = commandField.getText();
+        if (isRepalce) {
+            commandField.setText("console:grsb run");
+        } else {
+            commandField.setText(originCommand.replace("1", "2"));
+        }
+        isRepalce = !isRepalce;
     }
 }
